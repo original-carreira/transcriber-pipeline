@@ -20,6 +20,9 @@ class ExportServiceMock:
 
         print(f"[ExportService] Arquivo gerado em: {output_file}")
 
+        # ✔ CORREÇÃO: retornar caminho do arquivo
+        return output_file
+
 
 # app/services/export_service.py
 class ExportService:
@@ -29,11 +32,12 @@ class ExportService:
 
         os.makedirs(output_dir, exist_ok=True)
 
+        # ✔ CORREÇÃO: retornar resultado das funções internas
         if format == "txt":
-            self._export_txt(data, output_dir)
+            return self._export_txt(data, output_dir)
 
         elif format == "docx":
-            self._export_docx(data, output_dir)
+            return self._export_docx(data, output_dir)
 
         else:
             raise ValueError(f"Formato não suportado: {format}")
@@ -50,6 +54,9 @@ class ExportService:
                 f.write(paragraph.text + "\n\n")
 
         print(f"[ExportService] TXT gerado em: {output_file}")
+
+        # ✔ CORREÇÃO: retornar caminho do arquivo
+        return output_file
 
     # =========================
     # DOCX
@@ -72,3 +79,6 @@ class ExportService:
         doc.save(output_file)
 
         print(f"[ExportService] DOCX gerado em: {output_file}")
+
+        # ✔ CORREÇÃO: retornar caminho do arquivo
+        return output_file

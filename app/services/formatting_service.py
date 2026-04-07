@@ -93,10 +93,77 @@ class FormattingService:
         paragraphs = []
 
         for block in blocks:
-            text = self._improve_punctuation(block)
-            paragraphs.append(Paragraph(text=text))
+            if not block.strip():
+                continue
 
+            # 1. melhorar pontuação antes de dividir
+            text = self._improve_punctuation(block)
+
+            # 2. quebrar em frases
+            sentences = re.split(r'(?<=[.!?])\s+', text)
+
+            buffer = ""
+
+            for sentence in sentences:
+                sentence = sentence.strip()
+                if not sentence:
+                    continue
+
+                # detectar conectores no início da frase
+                if self._starts_with_connector(sentence):
+                    if len(buffer) >= 40:
+                        paragraphs.append(Paragraph(text=buffer.strip()))
+                        buffer = sentence
+                        continue
+
+                # tentativa de adicionar ao buffer
+                candidate = f"{buffer} {sentence}".strip() if buffer else sentence
+
+                if len(candidate) > 350:
+                    if buffer:
+                        paragraphs.append(Paragraph(text=buffer.strip()))
+                        buffer = sentence
+                else:
+                    buffer = candidate
+
+            # flush final
+            if buffer:
+                paragraphs.append(Paragraph(text=buffer.strip()))
+
+        # 3. pós-processamento: evitar parágrafos muito pequenos
+        paragraphs = self._merge_small_paragraphs(paragraphs)
+        
         return paragraphs
+
+
+    def _starts_with_connector(self, sentence: str) -> bool:
+        connectors = [
+            "mas", "porém", "então", "agora",
+            "depois", "assim", "portanto"
+            ]
+        
+        first_word = sentence.split()[0].lower()
+        return first_word in connectors
+    
+    
+    def _merge_small_paragraphs(self, paragraphs: List[Paragraph]) -> List[Paragraph]:
+        if not paragraphs:
+            return paragraphs
+
+        merged = []
+        buffer = paragraphs[0].text
+
+        for p in paragraphs[1:]:
+            if len(buffer) < 40:
+                buffer = f"{buffer} {p.text}"
+            else:
+                merged.append(Paragraph(text=buffer.strip()))
+                buffer = p.text
+
+        if buffer:
+            merged.append(Paragraph(text=buffer.strip()))
+
+        return merged
 
     # ----------------------------
     # 4. Pontuação básica
