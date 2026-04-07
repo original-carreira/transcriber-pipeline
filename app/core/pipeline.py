@@ -12,10 +12,10 @@ class Pipeline:
         # 2. Transcrição
         transcript = self.services.transcription.transcribe(audio_path)
 
-        # 3. Organização
+        # 3. Organização/Formatação
         structured = self.services.formatting.organize(transcript.segments)
 
         # 4. Exportação
-        self.services.export.export(structured, output_dir)
+        self.services.export.export(structured, output_dir, format="docx")
 
         print("\n=== PIPELINE FINALIZADO ===\n")

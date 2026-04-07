@@ -7,8 +7,8 @@ def main():
     pipeline = Pipeline(services)
 
     pipeline.run(
-        input_file="input.mp4",
-        output_dir="output"
+        input_file="data/input/input.mp4",
+        output_dir="data/output"
     )
 
 

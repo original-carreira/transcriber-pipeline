@@ -1,1 +1,0 @@
-Olá, este é um teste de transcrição. Estamos simulando um pipeline de processamento.
