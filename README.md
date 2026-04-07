@@ -1,27 +1,22 @@
 # Nome do Projeto: TranscriberPipeline
 
-## Objetivo
-(qual problema resolve)
+
+Sistema em Python para transcrição e organização de conteúdo a partir de áudio e vídeo.
+
+## Status atual
+
+✔ Arquitetura modular implementada  
+✔ Pipeline funcional com serviços mock  
+✔ Pronto para integração com ffmpeg e Whisper  
 
 ## Estrutura
-(como estÃ¡ organizado)
 
-## Tecnologias
-(ex: Python, SQLite, etc.)
+- core: pipeline e orquestração
+- services: serviços desacoplados
+- models: estruturas de dados
 
-## Funcionalidades
-- Item 1
-- Item 2
+## Próximos passos
 
-## DecisÃµes importantes
-- Por que X foi feito assim
-
-## Problemas encontrados
-- Bug X
-- LimitaÃ§Ã£o Y
-
-## PrÃ³ximos passos
-- O que falta
-
-## ObservaÃ§Ãµes
-- Insights relevantes
+- Implementação do AudioService (ffmpeg)
+- Integração com faster-whisper
+- Exportação avançada (DOCX)
