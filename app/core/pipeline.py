@@ -81,7 +81,8 @@ class Pipeline:
             output_path = self.services.export.export(
                 structured,
                 output_dir=output_dir,
-                format=format
+                format=format, 
+                segments=transcript.segments
             )
 
             # ----------------------------------------

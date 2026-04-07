@@ -66,6 +66,7 @@ class MainWindow(ctk.CTk):
 
         ctk.CTkLabel(format_frame, text="Formato:").pack(side="left", padx=10)
 
+        # ✔ ATUALIZAÇÃO: inclusão do SRT
         ctk.CTkRadioButton(
             format_frame, text="TXT",
             variable=self.output_format, value="txt"
@@ -74,6 +75,11 @@ class MainWindow(ctk.CTk):
         ctk.CTkRadioButton(
             format_frame, text="DOCX",
             variable=self.output_format, value="docx"
+        ).pack(side="left", padx=10)
+
+        ctk.CTkRadioButton(
+            format_frame, text="SRT",
+            variable=self.output_format, value="srt"
         ).pack(side="left", padx=10)
 
         # -------- Modo --------
@@ -157,16 +163,13 @@ class MainWindow(ctk.CTk):
         try:
             output_format = self.output_format.get()
 
-            # Seleção de modo
             selected_mode = self.mode_map[self.mode_menu.get()]
 
-            # Log inicial
             self._log_callback({
                 "type": "log",
                 "message": f"Modo: {selected_mode.upper()}"
             })
 
-            # Simulação de progresso por etapas (sem alterar pipeline)
             self._log_callback({"type": "progress", "value": 0.1})
 
             self.pipeline.run(
@@ -174,7 +177,7 @@ class MainWindow(ctk.CTk):
                 output_dir="data/output",
                 format=output_format,
                 callback=self._log_callback,
-                mode=selected_mode  # se suportado pelo pipeline
+                mode=selected_mode
             )
 
             self._log_callback({"type": "progress", "value": 1.0})
@@ -188,9 +191,6 @@ class MainWindow(ctk.CTk):
     # CALLBACK
     # ========================================
     def _log_callback(self, data):
-        """
-        Callback estruturado (thread-safe)
-        """
         self.after(0, self._handle_callback, data)
 
     def _handle_callback(self, data):
@@ -202,7 +202,6 @@ class MainWindow(ctk.CTk):
                 self.add_log(data.get("message", ""))
 
         else:
-            # compatibilidade com logs antigos
             self.add_log(str(data))
 
     # ========================================
