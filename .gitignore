@@ -1,0 +1,30 @@
+# Ambiente virtual
+venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*.class
+venc/
+.venv/
+.env
+
+# Arquivos temporários
+*.log
+*.tmp
+
+# Dados e TemporÃ¡rios (conforme  estrutura)
+data/input/*
+data/output/*
+data/temp/*
+!data/input/.gitkeep
+!data/output/.gitkeep
+!data/temp/.gitkeep
+
+# IDEs
+.vscode/
+.idea/
+
+# Sistema
+.DS_Store
+Thumbs.db
