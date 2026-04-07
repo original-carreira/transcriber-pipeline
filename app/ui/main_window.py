@@ -16,7 +16,7 @@ class MainWindow(ctk.CTk):
         # CONFIGURAÇÃO DA JANELA
         # ----------------------------------------
         self.title("Pipeline de Transcrição")
-        self.geometry("800x500")
+        self.geometry("800x550")
 
         # ----------------------------------------
         # INICIALIZAÇÃO DO CORE (SEM QUEBRAR ARQUITETURA)
@@ -31,6 +31,12 @@ class MainWindow(ctk.CTk):
         self.output_format = ctk.StringVar(value="txt")
         self.status_text = ctk.StringVar(value="Aguardando...")
 
+        # Mapeamento de modo (UI → core)
+        self.mode_map = {
+            "Rápido": "fast",
+            "Equilibrado": "balanced"
+        }
+
         self._build_ui()
 
     # ========================================
@@ -38,11 +44,11 @@ class MainWindow(ctk.CTk):
     # ========================================
     def _build_ui(self):
         self.grid_columnconfigure(0, weight=1)
-        self.grid_rowconfigure(4, weight=1)
+        self.grid_rowconfigure(6, weight=1)
 
         # -------- Seleção de arquivo --------
         file_frame = ctk.CTkFrame(self)
-        file_frame.grid(row=0, column=0, padx=20, pady=15, sticky="ew")
+        file_frame.grid(row=0, column=0, padx=20, pady=10, sticky="ew")
 
         self.file_entry = ctk.CTkEntry(file_frame, textvariable=self.file_path)
         self.file_entry.pack(side="left", fill="x", expand=True, padx=10, pady=10)
@@ -54,54 +60,64 @@ class MainWindow(ctk.CTk):
         )
         select_button.pack(side="left", padx=10)
 
-        # -------- Formato de saída --------
+        # -------- Formato --------
         format_frame = ctk.CTkFrame(self)
-        format_frame.grid(row=1, column=0, padx=20, pady=10, sticky="ew")
+        format_frame.grid(row=1, column=0, padx=20, pady=5, sticky="ew")
 
-        ctk.CTkLabel(format_frame, text="Formato de saída:").pack(side="left", padx=10)
+        ctk.CTkLabel(format_frame, text="Formato:").pack(side="left", padx=10)
 
         ctk.CTkRadioButton(
-            format_frame,
-            text="TXT",
-            variable=self.output_format,
-            value="txt"
+            format_frame, text="TXT",
+            variable=self.output_format, value="txt"
         ).pack(side="left", padx=10)
 
         ctk.CTkRadioButton(
-            format_frame,
-            text="DOCX",
-            variable=self.output_format,
-            value="docx"
+            format_frame, text="DOCX",
+            variable=self.output_format, value="docx"
         ).pack(side="left", padx=10)
 
-        # -------- Botão iniciar --------
+        # -------- Modo --------
+        mode_frame = ctk.CTkFrame(self)
+        mode_frame.grid(row=2, column=0, padx=20, pady=5, sticky="ew")
+
+        ctk.CTkLabel(mode_frame, text="Modo:").pack(side="left", padx=10)
+
+        self.mode_menu = ctk.CTkOptionMenu(
+            mode_frame,
+            values=["Rápido", "Equilibrado"]
+        )
+        self.mode_menu.set("Equilibrado")
+        self.mode_menu.pack(side="left", padx=10)
+
+        # -------- Botão --------
         self.start_button = ctk.CTkButton(
             self,
             text="Iniciar Processamento",
             command=self.start_processing
         )
-        self.start_button.grid(row=2, column=0, padx=20, pady=15)
+        self.start_button.grid(row=3, column=0, padx=20, pady=10)
+
+        # -------- Barra de progresso --------
+        self.progress = ctk.CTkProgressBar(self)
+        self.progress.grid(row=4, column=0, padx=20, pady=10, sticky="ew")
+        self.progress.set(0)
 
         # -------- Status --------
         self.status_label = ctk.CTkLabel(
             self,
-            textvariable=self.status_text,
-            font=("Arial", 14)
+            textvariable=self.status_text
         )
-        self.status_label.grid(row=3, column=0, padx=20, pady=5)
+        self.status_label.grid(row=5, column=0, padx=20, pady=5)
 
         # -------- Log --------
         self.log_box = ctk.CTkTextbox(self)
-        self.log_box.grid(row=4, column=0, padx=20, pady=10, sticky="nsew")
+        self.log_box.grid(row=6, column=0, padx=20, pady=10, sticky="nsew")
         self.log_box.configure(state="disabled")
 
     # ========================================
     # AÇÕES
     # ========================================
     def select_file(self):
-        """
-        Abre seletor de arquivos e atualiza UI
-        """
         path = filedialog.askopenfilename(
             filetypes=[
                 ("Mídia", "*.mp4 *.mp3 *.wav"),
@@ -111,59 +127,57 @@ class MainWindow(ctk.CTk):
 
         if path:
             self.file_path.set(path)
-
-            # UX: mostra nome do arquivo
-            self.status_text.set(
-                f"Arquivo selecionado: {os.path.basename(path)}"
-            )
+            self.status_text.set(f"Arquivo: {os.path.basename(path)}")
 
     def start_processing(self):
-        """
-        Valida entrada e inicia execução em thread separada
-        """
         file_path = self.file_path.get()
 
         if not file_path or not os.path.exists(file_path):
             self.status_text.set("Selecione um arquivo válido.")
             return
 
-        # ----------------------------------------
-        # FEEDBACK VISUAL INICIAL
-        # ----------------------------------------
+        # Feedback visual
         self.start_button.configure(state="disabled")
         self.file_entry.configure(state="disabled")
 
-        self.status_text.set("Preparando processamento...")
+        self.progress.set(0)
+        self.status_text.set("Iniciando processamento...")
         self.clear_log()
 
-        thread = threading.Thread(
+        threading.Thread(
             target=self._run_pipeline,
             args=(file_path,),
             daemon=True
-        )
-        thread.start()
+        ).start()
 
     # ========================================
-    # EXECUÇÃO DO PIPELINE
+    # EXECUÇÃO PIPELINE
     # ========================================
     def _run_pipeline(self, file_path: str):
-        """
-        Executa pipeline em background
-        """
         try:
             output_format = self.output_format.get()
 
-            # UX: informa formato selecionado
-            self._log_callback(
-                f"Formato selecionado: {output_format.upper()}"
-            )
+            # Seleção de modo
+            selected_mode = self.mode_map[self.mode_menu.get()]
+
+            # Log inicial
+            self._log_callback({
+                "type": "log",
+                "message": f"Modo: {selected_mode.upper()}"
+            })
+
+            # Simulação de progresso por etapas (sem alterar pipeline)
+            self._log_callback({"type": "progress", "value": 0.1})
 
             self.pipeline.run(
                 input_file=file_path,
                 output_dir="data/output",
                 format=output_format,
-                callback=self._log_callback
+                callback=self._log_callback,
+                mode=selected_mode  # se suportado pelo pipeline
             )
+
+            self._log_callback({"type": "progress", "value": 1.0})
 
             self.after(0, self.finish_success)
 
@@ -171,38 +185,35 @@ class MainWindow(ctk.CTk):
             self.after(0, self.finish_error, str(e))
 
     # ========================================
-    # CALLBACK DE LOG
+    # CALLBACK
     # ========================================
-    def _log_callback(self, message: str):
+    def _log_callback(self, data):
         """
-        Recebe logs do pipeline e envia para UI thread-safe
+        Callback estruturado (thread-safe)
         """
-        self.after(0, self._update_log_ui, message)
+        self.after(0, self._handle_callback, data)
 
-    def _update_log_ui(self, message: str):
-        """
-        Atualiza status + log visual
-        """
-        self.add_log(message)
-        
-        if "Concluído" in message or "Erro" in message:
-            self.status_text.set(message)
+    def _handle_callback(self, data):
+        if isinstance(data, dict):
+            if data.get("type") == "progress":
+                self.progress.set(data.get("value", 0))
+
+            elif data.get("type") == "log":
+                self.add_log(data.get("message", ""))
+
+        else:
+            # compatibilidade com logs antigos
+            self.add_log(str(data))
 
     # ========================================
     # FINALIZAÇÃO
     # ========================================
     def finish_success(self):
-        """
-        Executado quando pipeline finaliza com sucesso
-        """
-        self.status_text.set("Processo concluído com sucesso.")
+        self.status_text.set("Processo concluído.")
         self.start_button.configure(state="normal")
         self.file_entry.configure(state="normal")
 
     def finish_error(self, error):
-        """
-        Executado em caso de erro
-        """
         self.status_text.set(f"Erro: {error}")
         self.add_log(f"ERRO: {error}")
         self.start_button.configure(state="normal")

@@ -16,7 +16,7 @@ class TranscriptionService:
         """
 
         self.model = None
-        self.model_size = "base"     # ⚖️ equilíbrio ideal
+        self.model_size = "base"     # ⚖️ equilíbrio ideal (default)
         self.device = "cpu"
         self.compute_type = "int8"
 
@@ -33,40 +33,82 @@ class TranscriptionService:
                 compute_type=self.compute_type
             )
 
-    def transcribe(self, audio_path: str) -> Transcript:
+    def _get_config(self, mode: str):
+        """
+        Define configuração de inferência por modo.
+
+        fast:
+            - mais rápido
+            - menor qualidade
+            - sem contexto entre segmentos
+
+        balanced:
+            - melhor coerência
+            - ainda viável em CPU
+        """
+
+        if mode == "fast":
+            return {
+                "model": "base",
+                "beam_size": 1,
+                "vad_filter": True,
+                "condition_on_previous_text": False
+            }
+
+        # padrão: balanced
+        return {
+            "model": "base",
+            "beam_size": 2,
+            "vad_filter": True,
+            "condition_on_previous_text": True
+        }
+
+    def transcribe(self, audio_path: str, mode: str = "balanced", callback=None) -> Transcript:
         print(f"[TranscriptionService] Iniciando processamento: {audio_path}")
+        print(f"[TranscriptionService] Modo: {mode}")
+
+        # 🔧 aplica configuração por modo
+        config = self._get_config(mode)
+
+        # 🔄 troca de modelo (se necessário)
+        if self.model_size != config["model"]:
+            self.model = None
+            self.model_size = config["model"]
 
         # 🔥 Lazy loading (só carrega quando necessário)
         self._load_model()
 
         """
-        CONFIGURAÇÃO EQUILIBRADA:
+        CONFIGURAÇÃO DINÂMICA:
 
-        beam_size=2
-            → melhora qualidade sem custo alto
+        fast:
+            - beam_size=1 → máximo desempenho
+            - sem contexto → mais rápido
 
-        vad_filter=True
-            → remove silêncios e acelera processamento
+        balanced:
+            - beam_size=2 → melhor qualidade
+            - com contexto → mais coerência
 
-        min_silence_duration_ms=500
-            → evita cortes agressivos (mantém frases)
-
-        condition_on_previous_text=True
-            → mantém contexto entre segmentos
+        comum aos dois:
+            - vad_filter=True → acelera removendo silêncio
+            - min_silence_duration_ms=500 → evita cortes agressivos
         """
 
         segments_generator, info = self.model.transcribe(
             audio_path,
-            beam_size=2,  # ⚖️ equilíbrio entre qualidade e velocidade
+            beam_size=config["beam_size"],
             language="pt",
-            vad_filter=True,
+            vad_filter=config["vad_filter"],
             vad_parameters=dict(min_silence_duration_ms=500),
-            condition_on_previous_text=True
+            condition_on_previous_text=config["condition_on_previous_text"]
         )
 
         print(f"[TranscriptionService] Idioma detectado: {info.language}")
 
         segments = []
+
+        # 📊 duração total para cálculo de progresso real
+        total_duration = info.duration if hasattr(info, "duration") else None
 
         for whisper_segment in segments_generator:
             clean_text = whisper_segment.text.strip()
@@ -82,6 +124,16 @@ class TranscriptionService:
                     text=clean_text
                 )
             )
+
+            # 📈 progresso real (0 → 1)
+            if callback and total_duration:
+                progress = whisper_segment.end / total_duration
+                progress = min(progress, 1.0)
+
+                callback({
+                    "type": "progress",
+                    "value": progress
+                })
 
             # log de progresso por tempo processado
             print(f"[TranscriptionService] {whisper_segment.end:.1f}s processados")

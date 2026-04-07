@@ -16,19 +16,29 @@ class Pipeline:
         input_file: str,
         output_dir: str,
         format: str = "txt",
-        callback=None
+        callback=None,
+        mode: str = "balanced"
     ):
         """
         Executa o pipeline completo de forma sequencial.
 
+        Responsabilidades:
+        - Orquestrar os serviços
+        - Repassar parâmetros (mode, callback)
+        - Não contém lógica de negócio
+
         :param input_file: caminho do arquivo de entrada
         :param output_dir: diretório de saída
-        :param format: formato de exportação (txt | docx)
+        :param format: formato de exportação (txt | docx | json | srt)
         :param callback: função opcional para logs (callback(message: str))
+        :param mode: modo de transcrição (fast | balanced)
         """
 
         def log(message: str):
-            """Encapsula o callback para evitar repetição"""
+            """
+            Encapsula o callback para evitar repetição.
+            Mantém compatibilidade com a UI atual.
+            """
             if callback:
                 callback(message)
 
@@ -40,17 +50,25 @@ class Pipeline:
             audio_path = self.services.audio.extract(input_file)
 
             # ----------------------------------------
-            # 2. TRANSCRIÇÃO
+            # 2. TRANSCRIÇÃO (COM SUPORTE A MODE)
             # ----------------------------------------
             log("Transcrevendo áudio...")
-            transcript = self.services.transcription.transcribe(audio_path)
+
+            # IMPORTANTE:
+            # - Apenas repasse do parâmetro "mode"
+            # - Pipeline não decide comportamento interno
+            transcript = self.services.transcription.transcribe(
+                audio_path,
+                mode=mode,
+                callback=callback
+            )
 
             # ----------------------------------------
             # 3. ORGANIZAÇÃO DO TEXTO
-            # CORREÇÃO APLICADA AQUI:
-            # Agora usamos transcript.segments
             # ----------------------------------------
             log("Organizando texto...")
+
+            # Mantém uso de segments conforme correção anterior
             structured = self.services.formatting.organize(
                 transcript.segments
             )
@@ -59,6 +77,7 @@ class Pipeline:
             # 4. EXPORTAÇÃO
             # ----------------------------------------
             log(f"Exportando arquivo ({format.upper()})...")
+
             output_path = self.services.export.export(
                 structured,
                 output_dir=output_dir,
