@@ -1,3 +1,4 @@
+from app.utils.path_utils import get_resource_path
 from pathlib import Path
 import os
 import subprocess
@@ -12,8 +13,7 @@ class AudioServiceMock:
 
         print(f"[AudioService] Áudio gerado: {fake_audio_path}")
         return fake_audio_path
-    
-    
+
 
 # services/audio_service.py
 class AudioService:
@@ -21,21 +21,19 @@ class AudioService:
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
+        # ✅ CAMINHO CORRETO PARA .EXE
+        self.ffmpeg_path = get_resource_path("ffmpeg/ffmpeg.exe")
+
+        if not Path(self.ffmpeg_path).exists():
+            raise FileNotFoundError(
+                f"FFmpeg não encontrado em: {self.ffmpeg_path}"
+            )
+
     def extract(self, input_file: str) -> str:
-        # manter método público simples para a pipeline, delegando a lógica real para outro método
+        # manter método público simples para a pipeline
         return self.extract_audio(input_file)
-    
+
     def extract_audio(self, input_file: str) -> str:
-        """
-        Extrai áudio de um arquivo de vídeo e salva como WAV.
-
-        Args:
-            input_file (str): Caminho do arquivo de vídeo
-
-        Returns:
-            str: Caminho do arquivo WAV gerado
-        """
-
         input_path = Path(input_file)
 
         if not input_path.exists():
@@ -44,17 +42,18 @@ class AudioService:
         output_file = self.output_dir / f"{input_path.stem}.wav"
 
         command = [
-            "ffmpeg",
-            "-y",  # sobrescrever sem perguntar
+            self.ffmpeg_path,  # ✅ USAR CAMINHO RESOLVIDO
+            "-y",
             "-i", str(input_path),
-            "-vn",  # remove vídeo
-            "-acodec", "pcm_s16le",  # codec WAV padrão
-            "-ar", "16000",  # sample rate ideal para Whisper
-            "-ac", "1",  # mono (reduz custo e melhora transcrição)
+            "-vn",
+            "-acodec", "pcm_s16le",
+            "-ar", "16000",
+            "-ac", "1",
             str(output_file)
         ]
 
         try:
+            print("[AudioService] Usando ffmpeg em:", self.ffmpeg_path)
             print("[AudioService] Extraindo áudio com ffmpeg...")
 
             subprocess.run(
@@ -70,5 +69,5 @@ class AudioService:
 
         except subprocess.CalledProcessError as e:
             raise RuntimeError(
-                f"Erro ao extrair áudio com ffmpeg:\n{e.stderr.decode()}"
+                f"Erro ao extrair áudio com ffmpeg:\n{e.stderr.decode(errors='ignore')}"
             )
