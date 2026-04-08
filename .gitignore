@@ -28,3 +28,14 @@ data/temp/*
 # Sistema
 .DS_Store
 Thumbs.db
+
+# Build
+build/
+dist/
+*.spec
+
+# Executáveis
+*.exe
+
+# FFmpeg binário
+ffmpeg/
