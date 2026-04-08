@@ -27,7 +27,7 @@ temp/
 # Arquivos de vídeo gerados temporariamente
 *.mp4
 
-# (opcional) outros formatos de mídia
+#  outros formatos de mídia
 *.wav
 *.mp3
 
