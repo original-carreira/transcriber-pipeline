@@ -1,3 +1,5 @@
+from app.utils.app_paths import get_output_dir, get_temp_dir
+
 class Pipeline:
     def __init__(self, services):
         """
@@ -43,6 +45,13 @@ class Pipeline:
                 callback(message)
 
         try:
+            # ---------------------------------------
+            # RESOLUÇÃO DE DIRETÓRIOS
+            # ---------------------------------------            
+            if not output_dir:
+                output_dir = get_output_dir()
+                
+            temp_dir = get_temp_dir() # reservado para o futuro
             # ----------------------------------------
             # 1. EXTRAÇÃO DE ÁUDIO
             # ----------------------------------------
