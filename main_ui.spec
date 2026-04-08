@@ -3,10 +3,10 @@
 
 a = Analysis(
     ['main_ui.py'],
-    pathex=[],
+    pathex=['.'],
     binaries=[],
-    datas=[('ffmpeg/ffmpeg.exe', 'ffmpeg')],
-    hiddenimports=['faster_whisper'],
+    datas=[('ffmpeg/ffmpeg.exe', 'ffmpeg'), ('D:\\Projetos\\TranscriberPipeline\\venv\\Lib\\site-packages\\faster_whisper\\assets', 'faster_whisper/assets')],
+    hiddenimports=['faster_whisper', 'ctranslate2'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
