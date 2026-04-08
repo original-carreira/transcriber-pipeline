@@ -21,6 +21,16 @@ data/temp/*
 !data/output/.gitkeep
 !data/temp/.gitkeep
 
+# Pasta temporária do app
+temp/
+
+# Arquivos de vídeo gerados temporariamente
+*.mp4
+
+# (opcional) outros formatos de mídia
+*.wav
+*.mp3
+
 # IDEs
 .vscode/
 .idea/

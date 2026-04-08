@@ -174,7 +174,7 @@ class MainWindow(ctk.CTk):
 
             self.pipeline.run(
                 input_file=file_path,
-                output_dir="data/output",
+                output_dir=None,
                 format=output_format,
                 callback=self._log_callback,
                 mode=selected_mode
