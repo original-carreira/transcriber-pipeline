@@ -56,7 +56,7 @@ class Pipeline:
             # 1. EXTRAÇÃO DE ÁUDIO
             # ----------------------------------------
             log("Extraindo áudio...")
-            audio_path = self.services.audio.extract(input_file)
+            audio_path = self.services.audio.extract(input_file, temp_dir)
 
             # ----------------------------------------
             # 2. TRANSCRIÇÃO (COM SUPORTE A MODE)

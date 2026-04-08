@@ -17,10 +17,8 @@ class AudioServiceMock:
 
 # services/audio_service.py
 class AudioService:
-    def __init__(self, output_dir: str = "temp"):
-        self.output_dir = Path(output_dir)
-        self.output_dir.mkdir(parents=True, exist_ok=True)
-
+    def __init__(self):
+        
         # ✅ CAMINHO CORRETO PARA .EXE
         self.ffmpeg_path = get_resource_path("ffmpeg/ffmpeg.exe")
 
@@ -29,17 +27,25 @@ class AudioService:
                 f"FFmpeg não encontrado em: {self.ffmpeg_path}"
             )
 
-    def extract(self, input_file: str) -> str:
+    def extract(self, input_file: str, temp_dir:str = None) -> str:
         # manter método público simples para a pipeline
-        return self.extract_audio(input_file)
+        return self.extract_audio(input_file, temp_dir)
 
-    def extract_audio(self, input_file: str) -> str:
+    def extract_audio(self, input_file: str, temp_dir:str = None) -> str:
         input_path = Path(input_file)
 
         if not input_path.exists():
             raise FileNotFoundError(f"Arquivo não encontrado: {input_file}")
-
-        output_file = self.output_dir / f"{input_path.stem}.wav"
+        
+        # fallback
+        if not temp_dir:
+            temp_dir = "temp"
+            
+        temp_path = Path(temp_dir)
+        temp_path.mkdir(parents=True, exist_ok=True)       
+        
+        
+        output_file = temp_path / f"{input_path.stem}.wav"
 
         command = [
             self.ffmpeg_path,  # ✅ USAR CAMINHO RESOLVIDO
